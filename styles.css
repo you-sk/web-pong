@@ -1,0 +1,16 @@
+/* Interフォントの読み込み */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+
+body {
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+canvas {
+    background-color: #000; /* キャンバスの背景色を黒に */
+    display: block; /* 余分なスペースを削除 */
+    margin: 0 auto; /* 中央揃え */
+    border: 2px solid #fff; /* 白い枠線 */
+    border-radius: 8px; /* 角を丸く */
+}
