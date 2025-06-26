@@ -7,6 +7,7 @@ const html = fs.readFileSync(path.resolve(__dirname, '../index.html'), 'utf8');
 // Gameクラスをインポート
 const Game = require('../game.js').default;
 const SoundManager = require('../soundManager.js').default;
+const { updateButtonStyles } = require('../utils.js');
 
 describe('Web Pong Game', () => {
     let gameInstance; // Gameクラスのインスタンスを保持
@@ -321,5 +322,66 @@ describe('SoundManager Class', () => {
         soundManager.soundEnabled = false;
         soundManager.playWinLossSound(true);
         expect(soundManager.winLossSynth.triggerAttackRelease).not.toHaveBeenCalled();
+    });
+});
+
+describe('Utils', () => {
+    let mockButton1;
+    let mockButton2;
+    let mockButton3;
+    let allButtons;
+
+    beforeEach(() => {
+        mockButton1 = {
+            classList: {
+                remove: jest.fn(),
+                add: jest.fn(),
+            },
+        };
+        mockButton2 = {
+            classList: {
+                remove: jest.fn(),
+                add: jest.fn(),
+            },
+        };
+        mockButton3 = {
+            classList: {
+                remove: jest.fn(),
+                add: jest.fn(),
+            },
+        };
+        allButtons = [mockButton1, mockButton2, mockButton3];
+    });
+
+    test('updateButtonStylesがアクティブボタンのスタイルを正しく更新するか', () => {
+        updateButtonStyles(mockButton1, allButtons);
+
+        // アクティブボタン (mockButton1) の検証
+        expect(mockButton1.classList.remove).toHaveBeenCalledWith('bg-gray-500');
+        expect(mockButton1.classList.add).toHaveBeenCalledWith('bg-blue-500');
+
+        // 非アクティブボタン (mockButton2, mockButton3) の検証
+        expect(mockButton2.classList.remove).toHaveBeenCalledWith('bg-blue-500');
+        expect(mockButton2.classList.add).toHaveBeenCalledWith('bg-gray-500');
+        expect(mockButton3.classList.remove).toHaveBeenCalledWith('bg-blue-500');
+        expect(mockButton3.classList.add).toHaveBeenCalledWith('bg-gray-500');
+    });
+
+    test('updateButtonStylesがアクティブボタンがallButtonsに含まれていない場合でも動作するか', () => {
+        const newButton = {
+            classList: {
+                remove: jest.fn(),
+                add: jest.fn(),
+            },
+        };
+        updateButtonStyles(newButton, allButtons);
+
+        // 新しいボタンの検証
+        expect(newButton.classList.remove).toHaveBeenCalledWith('bg-gray-500');
+        expect(newButton.classList.add).toHaveBeenCalledWith('bg-blue-500');
+
+        // 既存のボタンの検証
+        expect(mockButton1.classList.remove).toHaveBeenCalledWith('bg-blue-500');
+        expect(mockButton1.classList.add).toHaveBeenCalledWith('bg-gray-500');
     });
 });

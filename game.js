@@ -3,6 +3,7 @@
 import Ball from './ball.js';
 import Paddle from './paddle.js';
 import SoundManager from './soundManager.js';
+import { updateButtonStyles } from './utils.js';
 
 class Game {
     constructor(canvasId) {
@@ -192,26 +193,16 @@ class Game {
         this.messageBox.classList.add('hidden');
     }
 
-    // ヘルパー関数: ボタンのアクティブスタイルを更新
-    updateButtonStyles(activeButton, allButtons) {
-        allButtons.forEach(button => {
-            button.classList.remove('bg-blue-500');
-            button.classList.add('bg-gray-500');
-        });
-        activeButton.classList.remove('bg-gray-500');
-        activeButton.classList.add('bg-blue-500');
-    }
-
     // CPUの強さを設定する関数
     setCpuDifficulty(difficulty) {
         this.currentCpuDifficulty = difficulty;
         const cpuButtons = [this.cpuStrongButton, this.cpuWeakButton];
         if (this.currentCpuDifficulty === 'strong') {
             this.cpuSpeed = 4; // 強いCPUの速度
-            this.updateButtonStyles(this.cpuStrongButton, cpuButtons);
+            updateButtonStyles(this.cpuStrongButton, cpuButtons);
         } else { // 'weak'
             this.cpuSpeed = 2; // 弱いCPUの速度 (速度を遅くする)
-            this.updateButtonStyles(this.cpuWeakButton, cpuButtons);
+            updateButtonStyles(this.cpuWeakButton, cpuButtons);
         }
         this.player2.speed = this.cpuSpeed; // CPUパドルの速度を更新
     }
@@ -224,16 +215,16 @@ class Game {
         switch (size) {
             case 'wide':
                 newHeight = this.basePaddleHeight * 2;
-                this.updateButtonStyles(this.paddleWideButton, paddleButtons);
+                updateButtonStyles(this.paddleWideButton, paddleButtons);
                 break;
             case 'narrow':
                 newHeight = this.basePaddleHeight / 2;
-                this.updateButtonStyles(this.paddleNarrowButton, paddleButtons);
+                updateButtonStyles(this.paddleNarrowButton, paddleButtons);
                 break;
             case 'normal':
             default:
                 newHeight = this.basePaddleHeight;
-                this.updateButtonStyles(this.paddleNormalButton, paddleButtons);
+                updateButtonStyles(this.paddleNormalButton, paddleButtons);
                 break;
         }
         this.player1.height = newHeight; // プレイヤー1のパドル高さのみ変更
@@ -308,11 +299,9 @@ class Game {
             this.toggleSoundButton.textContent = `サウンド: ${this.soundManager.soundEnabled ? 'ON' : 'OFF'}`; // ボタンのテキストを更新
             // 必要に応じてボタンのスタイルも更新
             if (this.soundManager.soundEnabled) {
-                this.toggleSoundButton.classList.remove('from-gray-500', 'to-gray-600');
-                this.toggleSoundButton.classList.add('from-green-500', 'to-teal-500');
+                updateButtonStyles(this.toggleSoundButton, [this.toggleSoundButton]);
             } else {
-                this.toggleSoundButton.classList.remove('from-green-500', 'to-teal-500');
-                this.toggleSoundButton.classList.add('from-gray-500', 'to-gray-600');
+                updateButtonStyles(this.toggleSoundButton, [this.toggleSoundButton]);
             }
         });
 
@@ -346,4 +335,5 @@ class Game {
 }
 
 export default Game;
+
 
