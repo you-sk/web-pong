@@ -1,4 +1,4 @@
-// ball.js
+import { drawCircle } from './graphics.js';
 
 class Ball {
     constructor(x, y, size, initialSpeed, canvas) {
@@ -12,10 +12,7 @@ class Ball {
     }
 
     draw(ctx) {
-        ctx.fillStyle = '#FFEB3B'; // ボールを黄色に
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        ctx.fill();
+        drawCircle(ctx, this.x, this.y, this.size, '#FFEB3B'); // ボールを黄色に
     }
 
     update() {
