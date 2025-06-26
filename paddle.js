@@ -1,5 +1,7 @@
 // paddle.js
 
+import { drawRect } from './graphics.js';
+
 class Paddle {
     constructor(x, y, width, height, speed, canvas) {
         this.x = x;
@@ -11,8 +13,7 @@ class Paddle {
     }
 
     draw(ctx, color) {
-        ctx.fillStyle = color;
-        ctx.fillRect(this.x, this.y, this.width, this.height);
+        drawRect(ctx, this.x, this.y, this.width, this.height, color);
     }
 
     moveUp() {
