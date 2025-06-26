@@ -6,6 +6,7 @@ const html = fs.readFileSync(path.resolve(__dirname, '../index.html'), 'utf8');
 
 // Gameクラスをインポート
 const Game = require('../game.js').default;
+const SoundManager = require('../soundManager.js').default;
 
 describe('Web Pong Game', () => {
     let gameInstance; // Gameクラスのインスタンスを保持
@@ -219,5 +220,106 @@ describe('Paddle Class', () => {
         paddle.y = 100;
         paddle.reset(50);
         expect(paddle.y).toBe(50);
+    });
+});
+
+describe('SoundManager Class', () => {
+    let soundManager;
+    let Tone;
+
+    beforeEach(() => {
+        // Tone.jsのモックをリセット
+        Tone = {
+            Synth: jest.fn().mockImplementation(() => ({
+                toDestination: jest.fn().mockReturnThis(),
+                triggerAttackRelease: jest.fn(),
+                envelope: {
+                    attack: 0,
+                    decay: 0,
+                    sustain: 0,
+                    release: 0,
+                },
+                oscillator: {
+                    type: ''
+                }
+            })),
+            start: jest.fn().mockResolvedValue(undefined),
+        };
+        global.Tone = Tone; // グローバルに設定
+
+        soundManager = new SoundManager();
+    });
+
+    test('SoundManagerが正しく初期化されるか', () => {
+        expect(soundManager.soundEnabled).toBe(true);
+        expect(Tone.Synth).toHaveBeenCalledTimes(3); // 3つのシンセが作成される
+    });
+
+    test('toggleSound()がsoundEnabledの状態を切り替えるか', async () => {
+        expect(soundManager.soundEnabled).toBe(true);
+        await soundManager.toggleSound();
+        expect(soundManager.soundEnabled).toBe(false);
+        await soundManager.toggleSound();
+        expect(soundManager.soundEnabled).toBe(true);
+    });
+
+    test('playPaddleHitSound()がsoundEnabledがtrueの場合にサウンドを再生するか', () => {
+        soundManager.soundEnabled = true;
+        soundManager.playPaddleHitSound();
+        expect(soundManager.paddleHitSynth.triggerAttackRelease).toHaveBeenCalledWith('E5', '8n');
+    });
+
+    test('playPaddleHitSound()がsoundEnabledがfalseの場合にサウンドを再生しないか', () => {
+        soundManager.soundEnabled = false;
+        soundManager.playPaddleHitSound();
+        expect(soundManager.paddleHitSynth.triggerAttackRelease).not.toHaveBeenCalled();
+    });
+
+    test('playWallHitSound()がsoundEnabledがtrueの場合にサウンドを再生するか', () => {
+        soundManager.soundEnabled = true;
+        soundManager.playWallHitSound();
+        expect(soundManager.paddleHitSynth.triggerAttackRelease).toHaveBeenCalledWith('C5', '8n');
+    });
+
+    test('playWallHitSound()がsoundEnabledがfalseの場合にサウンドを再生しないか', () => {
+        soundManager.soundEnabled = false;
+        soundManager.playWallHitSound();
+        expect(soundManager.paddleHitSynth.triggerAttackRelease).not.toHaveBeenCalled();
+    });
+
+    test('playScoreSound()がsoundEnabledがtrueの場合にサウンドを再生するか (player1)', () => {
+        soundManager.soundEnabled = true;
+        soundManager.playScoreSound(true);
+        expect(soundManager.scoreSynth.triggerAttackRelease).toHaveBeenCalledWith('C4', '4n');
+    });
+
+    test('playScoreSound()がsoundEnabledがtrueの場合にサウンドを再生するか (player2)', () => {
+        soundManager.soundEnabled = true;
+        soundManager.playScoreSound(false);
+        expect(soundManager.scoreSynth.triggerAttackRelease).toHaveBeenCalledWith('G4', '4n');
+    });
+
+    test('playScoreSound()がsoundEnabledがfalseの場合にサウンドを再生しないか', () => {
+        soundManager.soundEnabled = false;
+        soundManager.playScoreSound(true);
+        expect(soundManager.scoreSynth.triggerAttackRelease).not.toHaveBeenCalled();
+    });
+
+    test('playWinLossSound()がsoundEnabledがtrueの場合にサウンドを再生するか (win)', () => {
+        soundManager.soundEnabled = true;
+        soundManager.playWinLossSound(true);
+        expect(soundManager.winLossSynth.triggerAttackRelease).toHaveBeenCalledWith('C6', '1n');
+    });
+
+    test('playWinLossSound()がsoundEnabledがtrueの場合にサウンドを再生するか (loss)', () => {
+        soundManager.soundEnabled = true;
+        soundManager.playWinLossSound(false);
+        expect(soundManager.winLossSynth.triggerAttackRelease).toHaveBeenCalledWith('G3', '1n');
+    });
+
+    test('playWinLossSound()がsoundEnabledがfalseの場合にサウンドを再生しないか', () => {
+        soundManager.soundEnabled = false;
+        soundManager.playWinLossSound(true);
+        expect(soundManager.winLossSynth.triggerAttackRelease).not.toHaveBeenCalled();
     });
 });
