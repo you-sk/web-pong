@@ -4,11 +4,11 @@ const path = require('path');
 // HTMLファイルを読み込む
 const html = fs.readFileSync(path.resolve(__dirname, '../index.html'), 'utf8');
 
-// main.jsのコードを一度だけ読み込む
-const mainJsCode = fs.readFileSync(path.resolve(__dirname, '../main.js'), 'utf8');
+// main.jsからcreateGame関数をインポート
+const createGame = require('../main.js').default;
 
 describe('Web Pong Game', () => {
-    let gameModule; // main.jsからエクスポートされるオブジェクトを保持
+    let gameModule; // createGame関数が返すゲームインスタンスを保持
 
     beforeAll(() => {
         // JSDOMのdocumentにHTML構造をセット
@@ -48,37 +48,16 @@ describe('Web Pong Game', () => {
             start: jest.fn().mockResolvedValue(undefined),
         };
 
-        // main.jsのコードをIIFEでラップし、テストに必要な変数をエクスポートする
-        // これにより、main.jsのconst/let変数をテストからアクセス可能にする
-        const wrappedMainJsCode = `
-            (function() {
-                ${mainJsCode}
-                window.gameModule = {
-                    player1,
-                    player2,
-                    ball,
-                    gameRunning,
-                    resetBall,
-                    canvas, // canvasもエクスポート
-                    // 他にもテストしたい変数や関数があればここに追加
-                };
-            })();
-        `;
+        // createGame関数を呼び出してゲームインスタンスを取得
+        gameModule = createGame();
+        gameModule.init(); // ゲームを初期化
 
-        // ラップしたコードを評価してグローバルスコープにロード
-        eval(wrappedMainJsCode);
-
-        // window.onloadが実行されるのを待つ
-        // main.jsのwindow.onload関数が実行されるように、DOMContentLoadedイベントを発火させる
-        document.dispatchEvent(new Event('DOMContentLoaded'));
-
-        // エクスポートされたオブジェクトを取得
-        gameModule = window.gameModule;
+        // requestAnimationFrameをモック
+        global.requestAnimationFrame = jest.fn(cb => cb());
     });
 
     beforeEach(() => {
         // 各テストの前にゲームの状態をリセット
-        // gameModuleから取得した初期値を使ってリセットする
         gameModule.player1.score = 0;
         gameModule.player2.score = 0;
         gameModule.resetBall(); // resetBall関数を呼び出してボールとパドルをリセット
@@ -89,9 +68,6 @@ describe('Web Pong Game', () => {
 
         // メッセージボックスを非表示に
         document.getElementById('message-box').classList.add('hidden');
-
-        // requestAnimationFrameをモック
-        global.requestAnimationFrame = jest.fn(cb => cb());
     });
 
     afterEach(() => {
@@ -135,5 +111,60 @@ describe('Web Pong Game', () => {
         expect(gameModule.player1.y).toBe(initialPlayer1Y);
         expect(gameModule.player2.y).toBe(initialPlayer2Y);
         expect(gameModule.gameRunning).toBe(false);
+    });
+});
+
+describe('Ball Class', () => {
+    let canvas;
+    let ball;
+    let Ball;
+
+    beforeEach(() => {
+        canvas = {
+            width: 800,
+            height: 600,
+        };
+        // Ballクラスを動的にインポート
+        Ball = require('../ball.js').default;
+        ball = new Ball(canvas.width / 2, canvas.height / 2, 10, 5, canvas);
+    });
+
+    test('Ballが正しく初期化されるか', () => {
+        expect(ball.x).toBe(400);
+        expect(ball.y).toBe(300);
+        expect(ball.size).toBe(10);
+        expect(ball.initialSpeed).toBe(5);
+        expect(ball.dx).toBe(5);
+        expect(ball.dy).toBe(5);
+    });
+
+    test('Ballのupdate()が正しくボールの位置を更新するか', () => {
+        ball.update();
+        expect(ball.x).toBe(405);
+        expect(ball.y).toBe(305);
+    });
+
+    test('Ballが上下の壁に当たったときにdyが反転するか', () => {
+        ball.y = canvas.height - ball.size + 1; // 下の壁に当たるように設定
+        ball.update();
+        expect(ball.dy).toBe(-5); // dyが反転することを確認
+
+        ball.y = ball.size - 1; // 上の壁に当たるように設定
+        ball.update();
+        expect(ball.dy).toBe(5); // dyが再度反転することを確認
+    });
+
+    test('Ballのreset()がボールを中央にリセットし、速度をランダムに設定するか', () => {
+        ball.x = 100;
+        ball.y = 100;
+        ball.dx = -10;
+        ball.dy = -10;
+
+        ball.reset();
+
+        expect(ball.x).toBe(canvas.width / 2);
+        expect(ball.y).toBe(canvas.height / 2);
+        expect(Math.abs(ball.dx)).toBe(ball.initialSpeed);
+        expect(Math.abs(ball.dy)).toBe(ball.initialSpeed);
     });
 });
