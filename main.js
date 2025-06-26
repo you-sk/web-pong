@@ -1,6 +1,7 @@
 // main.js
 
 import Ball from './ball.js';
+import Paddle from './paddle.js';
 
 // ゲームの初期化と実行ロジックをカプセル化する関数
 function createGame() {
@@ -32,19 +33,11 @@ function createGame() {
     let cpuSpeed = 4; // CPUパドルの速度 (初期値は「強い」)
     let currentCpuDifficulty = 'strong'; // 'strong' or 'weak'
 
-    let player1 = {
-        x: 0,
-        y: canvas.height / 2 - basePaddleHeight / 2, // 初期位置はbasePaddleHeight基準
-        score: 0,
-        height: basePaddleHeight // プレイヤー1の現在のパドル高さ
-    };
+    const player1 = new Paddle(0, canvas.height / 2 - basePaddleHeight / 2, paddleWidth, basePaddleHeight, paddleSpeed, canvas);
+    player1.score = 0; // スコアはPaddleクラスではなくGameクラスで管理するため、ここで追加
 
-    let player2 = { // CPUプレイヤー
-        x: canvas.width - paddleWidth,
-        y: canvas.height / 2 - basePaddleHeight / 2, // 初期位置はbasePaddleHeight基準
-        score: 0,
-        height: basePaddleHeight // プレイヤー2の現在のパドル高さ (常に普通サイズ)
-    };
+    const player2 = new Paddle(canvas.width - paddleWidth, canvas.height / 2 - basePaddleHeight / 2, paddleWidth, basePaddleHeight, cpuSpeed, canvas); // CPUプレイヤー
+    player2.score = 0; // スコアはPaddleクラスではなくGameクラスで管理するため、ここで追加
 
     const ball = new Ball(canvas.width / 2, canvas.height / 2, ballSize, ballInitialSpeed, canvas);
 
@@ -81,20 +74,14 @@ function createGame() {
 
     // --- 描画関数 ---
 
-    // 長方形を描画
-    function drawRect(x, y, width, height, color) {
-        ctx.fillStyle = color;
-        ctx.fillRect(x, y, width, height);
-    }
-
     // 全てのゲーム要素を描画
     function draw() {
         // キャンバスをクリア
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // パドルを描画 (player1.height, player2.heightを使用)
-        drawRect(player1.x, player1.y, paddleWidth, player1.height, '#4CAF50'); // プレイヤー1を緑色に
-        drawRect(player2.x, player2.y, paddleWidth, player2.height, '#2196F3'); // プレイヤー2 (CPU) を青色に
+        // パドルを描画
+        player1.draw(ctx, '#4CAF50'); // プレイヤー1を緑色に
+        player2.draw(ctx, '#2196F3'); // プレイヤー2 (CPU) を青色に
 
         // ボールを描画
         ball.draw(ctx);
@@ -108,7 +95,7 @@ function createGame() {
 
     // ボールとパドルの衝突判定
     function checkCollision(ball, paddle) {
-        return ball.x - ball.size < paddle.x + paddleWidth &&
+        return ball.x - ball.size < paddle.x + paddle.width &&
             ball.x + ball.size > paddle.x &&
             ball.y - ball.size < paddle.y + paddle.height && // paddle.heightを使用
             ball.y + ball.size > paddle.y;
@@ -119,26 +106,20 @@ function createGame() {
         if (!gameRunning) return; // ゲームが実行中でなければ更新しない
 
         // プレイヤー1パドルの移動 (カーソルキーに対応)
-        if (upArrowPressed && player1.y > 0) {
-            player1.y -= paddleSpeed;
+        if (upArrowPressed) {
+            player1.moveUp();
         }
-        if (downArrowPressed && player1.y < canvas.height - player1.height) { // player1.heightを使用
-            player1.y += paddleSpeed;
+        if (downArrowPressed) {
+            player1.moveDown();
         }
 
         // CPUパドルの移動ロジック
         // ボールがCPU側に向かっている場合、ボールのY座標を追従
         if (ball.dx > 0) { // ボールが右に移動している場合
-            if (ball.y > player2.y + player2.height / 2 && player2.y < canvas.height - player2.height) { // player2.heightを使用
+            if (ball.y > player2.y + player2.height / 2) {
                 player2.y += cpuSpeed;
-            } else if (ball.y < player2.y + player2.height / 2 && player2.y > 0) { // player2.heightを使用
+            } else if (ball.y < player2.y + player2.height / 2) {
                 player2.y -= cpuSpeed;
-            }
-        } else { // ボールが左に移動している場合、パドルを中央に戻す
-            if (player2.y + player2.height / 2 < canvas.height / 2) { // player2.heightを使用
-                player2.y += cpuSpeed / 2;
-            } else if (player2.y + player2.height / 2 > canvas.height / 2) { // player2.heightを使用
-                player2.y -= cpuSpeed / 2;
             }
         }
         // パドルがキャンバスの境界を越えないようにする
@@ -228,8 +209,8 @@ function createGame() {
         ball.reset(); // Ballクラスのresetメソッドを呼び出す
 
         // パドル位置を初期位置にリセット (現在のパドル高さに基づいて中央に配置)
-        player1.y = canvas.height / 2 - player1.height / 2;
-        player2.y = canvas.height / 2 - player2.height / 2; // CPUパドルは常に普通サイズで中央に
+        player1.reset(canvas.height / 2 - player1.height / 2);
+        player2.reset(canvas.height / 2 - player2.height / 2); // CPUパドルは常に普通サイズで中央に
 
         gameRunning = false; // ボールがリセットされたらゲームを一時停止
         // 勝敗が決まっていない場合のみメッセージを表示
@@ -269,6 +250,7 @@ function createGame() {
             cpuSpeed = 2; // 弱いCPUの速度 (速度を遅くする)
             updateButtonStyles(cpuWeakButton, cpuButtons);
         }
+        player2.speed = cpuSpeed; // CPUパドルの速度を更新
     }
 
     // パドルの高さを設定する関数 (プレイヤー側のみ)
@@ -292,6 +274,7 @@ function createGame() {
                 break;
         }
         player1.height = newHeight; // プレイヤー1のパドル高さのみ変更
+        player1.y = canvas.height / 2 - player1.height / 2; // パドル位置を中央に再調整
         // player2.height は常に basePaddleHeight で固定
         resetBall(); // パドルサイズ変更後に位置をリセット
     }

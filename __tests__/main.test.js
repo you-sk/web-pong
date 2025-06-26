@@ -168,3 +168,56 @@ describe('Ball Class', () => {
         expect(Math.abs(ball.dy)).toBe(ball.initialSpeed);
     });
 });
+
+describe('Paddle Class', () => {
+    let canvas;
+    let paddle;
+    let Paddle;
+
+    beforeEach(() => {
+        canvas = {
+            width: 800,
+            height: 600,
+        };
+        Paddle = require('../paddle.js').default;
+        paddle = new Paddle(0, 0, 15, 100, 8, canvas);
+    });
+
+    test('Paddleが正しく初期化されるか', () => {
+        expect(paddle.x).toBe(0);
+        expect(paddle.y).toBe(0);
+        expect(paddle.width).toBe(15);
+        expect(paddle.height).toBe(100);
+        expect(paddle.speed).toBe(8);
+    });
+
+    test('moveUp()がパドルを上に移動させるか', () => {
+        paddle.y = 100;
+        paddle.moveUp();
+        expect(paddle.y).toBe(92);
+    });
+
+    test('moveUp()がキャンバスの上端を超えないか', () => {
+        paddle.y = 5;
+        paddle.moveUp();
+        expect(paddle.y).toBe(0);
+    });
+
+    test('moveDown()がパドルを下に移動させるか', () => {
+        paddle.y = 100;
+        paddle.moveDown();
+        expect(paddle.y).toBe(108);
+    });
+
+    test('moveDown()がキャンバスの下端を超えないか', () => {
+        paddle.y = canvas.height - paddle.height - 5; // 下端から5px上に設定
+        paddle.moveDown();
+        expect(paddle.y).toBe(canvas.height - paddle.height);
+    });
+
+    test('reset()がパドルを初期Y位置にリセットするか', () => {
+        paddle.y = 100;
+        paddle.reset(50);
+        expect(paddle.y).toBe(50);
+    });
+});
