@@ -1,3 +1,5 @@
+import Ball from './ball.js';
+
 // キャンバスと2D描画コンテキストを取得
 const canvas = document.getElementById('pongCanvas');
 const ctx = canvas.getContext('2d');
@@ -40,12 +42,7 @@ let player2 = { // CPUプレイヤー
     height: basePaddleHeight // プレイヤー2の現在のパドル高さ (常に普通サイズ)
 };
 
-let ball = {
-    x: canvas.width / 2,
-    y: canvas.height / 2,
-    dx: ballInitialSpeed, // ボールのX方向速度
-    dy: ballInitialSpeed  // ボールのY方向速度
-};
+const ball = new Ball(canvas.width / 2, canvas.height / 2, ballSize, ballInitialSpeed, canvas);
 
 // キー入力の状態 (カーソルキー用に変更)
 let upArrowPressed = false;
@@ -86,14 +83,6 @@ function drawRect(x, y, width, height, color) {
     ctx.fillRect(x, y, width, height);
 }
 
-// 円（ボール）を描画
-function drawCircle(x, y, radius, color) {
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.arc(x, y, radius, 0, Math.PI * 2);
-    ctx.fill();
-}
-
 // 全てのゲーム要素を描画
 function draw() {
     // キャンバスをクリア
@@ -104,7 +93,7 @@ function draw() {
     drawRect(player2.x, player2.y, paddleWidth, player2.height, '#2196F3'); // プレイヤー2 (CPU) を青色に
 
     // ボールを描画
-    drawCircle(ball.x, ball.y, ballSize, '#FFEB3B'); // ボールを黄色に
+    ball.draw(ctx);
 
     // スコアを更新 (HTML要素のtextContentを更新)
     player1ScoreElem.textContent = player1.score;
@@ -115,10 +104,10 @@ function draw() {
 
 // ボールとパドルの衝突判定
 function checkCollision(ball, paddle) {
-    return ball.x - ballSize < paddle.x + paddleWidth &&
-        ball.x + ballSize > paddle.x &&
-        ball.y - ballSize < paddle.y + paddle.height && // paddle.heightを使用
-        ball.y + ballSize > paddle.y;
+    return ball.x - ball.size < paddle.x + paddleWidth &&
+        ball.x + ball.size > paddle.x &&
+        ball.y - ball.size < paddle.y + paddle.height && // paddle.heightを使用
+        ball.y + ball.size > paddle.y;
 }
 
 // ゲームの状態を更新
@@ -153,19 +142,17 @@ function update() {
 
 
     // ボールの移動
-    ball.x += ball.dx;
-    ball.y += ball.dy;
+    ball.update();
 
-    // ボールが上下の壁に当たった場合の処理
-    if (ball.y + ballSize > canvas.height || ball.y - ballSize < 0) {
-        ball.dy *= -1; // 速度を反転
+    // ボールが上下の壁に当たった場合の処理 (Ballクラスに移動済みだが、サウンド再生はmain.jsに残す)
+    if (ball.y + ball.size > canvas.height || ball.y - ball.size < 0) {
         if (soundEnabled) { // サウンドが有効な場合のみ再生
             paddleHitSynth.triggerAttackRelease('C5', '8n'); // 壁に当たった音
         }
     }
 
     // ボールが左右の壁に当たった場合（得点）
-    if (ball.x - ballSize < 0) { // CPUが得点
+    if (ball.x - ball.size < 0) { // CPUが得点
         player2.score++;
         if (soundEnabled) { // サウンドが有効な場合のみ再生
             scoreSynth.triggerAttackRelease('G4', '4n'); // スコア音
@@ -178,7 +165,7 @@ function update() {
         } else {
             resetBall();
         }
-    } else if (ball.x + ballSize > canvas.width) { // プレイヤー1が得点
+    } else if (ball.x + ball.size > canvas.width) { // プレイヤー1が得点
         player1.score++;
         if (soundEnabled) { // サウンドが有効な場合のみ再生
             scoreSynth.triggerAttackRelease('C4', '4n'); // スコア音
@@ -234,11 +221,7 @@ function update() {
 
 // ボールとパドルを中央にリセット
 function resetBall() {
-    ball.x = canvas.width / 2;
-    ball.y = canvas.height / 2;
-    // ボールの方向をランダムに設定
-    ball.dx = (Math.random() > 0.5 ? 1 : -1) * ballInitialSpeed;
-    ball.dy = (Math.random() > 0.5 ? 1 : -1) * ballInitialSpeed;
+    ball.reset(); // Ballクラスのresetメソッドを呼び出す
 
     // パドル位置を初期位置にリセット (現在のパドル高さに基づいて中央に配置)
     player1.y = canvas.height / 2 - player1.height / 2;
