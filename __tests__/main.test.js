@@ -4,11 +4,11 @@ const path = require('path');
 // HTMLファイルを読み込む
 const html = fs.readFileSync(path.resolve(__dirname, '../index.html'), 'utf8');
 
-// main.jsからcreateGame関数をインポート
-const createGame = require('../main.js').default;
+// Gameクラスをインポート
+const Game = require('../game.js').default;
 
 describe('Web Pong Game', () => {
-    let gameModule; // createGame関数が返すゲームインスタンスを保持
+    let gameInstance; // Gameクラスのインスタンスを保持
 
     beforeAll(() => {
         // JSDOMのdocumentにHTML構造をセット
@@ -48,9 +48,9 @@ describe('Web Pong Game', () => {
             start: jest.fn().mockResolvedValue(undefined),
         };
 
-        // createGame関数を呼び出してゲームインスタンスを取得
-        gameModule = createGame();
-        gameModule.init(); // ゲームを初期化
+        // Gameクラスのインスタンスを作成し、初期化
+        gameInstance = new Game('pongCanvas');
+        gameInstance.init();
 
         // requestAnimationFrameをモック
         global.requestAnimationFrame = jest.fn(cb => cb());
@@ -58,9 +58,9 @@ describe('Web Pong Game', () => {
 
     beforeEach(() => {
         // 各テストの前にゲームの状態をリセット
-        gameModule.player1.score = 0;
-        gameModule.player2.score = 0;
-        gameModule.resetBall(); // resetBall関数を呼び出してボールとパドルをリセット
+        gameInstance.player1.score = 0;
+        gameInstance.player2.score = 0;
+        gameInstance.resetBall(); // resetBall関数を呼び出してボールとパドルをリセット
 
         // スコア表示要素もリセット
         document.getElementById('player1-score').textContent = '0';
@@ -75,15 +75,15 @@ describe('Web Pong Game', () => {
     });
 
     test('ゲームの初期変数が正しく設定されているか', () => {
-        expect(gameModule.player1).toBeDefined();
-        expect(gameModule.player2).toBeDefined();
-        expect(gameModule.ball).toBeDefined();
-        expect(gameModule.gameRunning).toBe(false); // 初期状態はゲームが実行されていない
+        expect(gameInstance.player1).toBeDefined();
+        expect(gameInstance.player2).toBeDefined();
+        expect(gameInstance.ball).toBeDefined();
+        expect(gameInstance.gameRunning).toBe(false); // 初期状態はゲームが実行されていない
     });
 
     test('初期スコアが0であるか', () => {
-        expect(gameModule.player1.score).toBe(0);
-        expect(gameModule.player2.score).toBe(0);
+        expect(gameInstance.player1.score).toBe(0);
+        expect(gameInstance.player2.score).toBe(0);
         // HTML上の表示も確認
         const player1ScoreElem = document.getElementById('player1-score');
         const player2ScoreElem = document.getElementById('player2-score');
@@ -93,24 +93,24 @@ describe('Web Pong Game', () => {
 
     test('resetBall()関数がボールとパドルを初期位置に戻すか', () => {
         // 初期位置を保存
-        const initialPlayer1Y = gameModule.player1.y;
-        const initialPlayer2Y = gameModule.player2.y;
+        const initialPlayer1Y = gameInstance.player1.y;
+        const initialPlayer2Y = gameInstance.player2.y;
 
         // パドルとボールの位置を意図的に変更
-        gameModule.player1.y = 100;
-        gameModule.player2.y = 100;
-        gameModule.ball.x = 100;
-        gameModule.ball.y = 100;
+        gameInstance.player1.y = 100;
+        gameInstance.player2.y = 100;
+        gameInstance.ball.x = 100;
+        gameInstance.ball.y = 100;
 
         // リセット関数を実行
-        gameModule.resetBall();
+        gameInstance.resetBall();
 
         // 位置が初期状態に戻っているかを確認
-        expect(gameModule.ball.x).toBe(gameModule.canvas.width / 2);
-        expect(gameModule.ball.y).toBe(gameModule.canvas.height / 2);
-        expect(gameModule.player1.y).toBe(initialPlayer1Y);
-        expect(gameModule.player2.y).toBe(initialPlayer2Y);
-        expect(gameModule.gameRunning).toBe(false);
+        expect(gameInstance.ball.x).toBe(gameInstance.canvas.width / 2);
+        expect(gameInstance.ball.y).toBe(gameInstance.canvas.height / 2);
+        expect(gameInstance.player1.y).toBe(initialPlayer1Y);
+        expect(gameInstance.player2.y).toBe(initialPlayer2Y);
+        expect(gameInstance.gameRunning).toBe(false);
     });
 });
 
